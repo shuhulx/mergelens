@@ -211,7 +211,7 @@ def tsv_interference_score(
             n_pairs += 1
 
     if n_pairs == 0:
-        return float('nan')
+        return float("nan")
     return total_interference / n_pairs
 
 
@@ -252,7 +252,9 @@ def cka_similarity(
     Based on: Kornblith et al. 2019 "Similarity of Neural Network Representations Revisited"
     """
     if activations_a.numel() != activations_b.numel():
-        raise ValueError(f"Tensor size mismatch: {activations_a.numel()} vs {activations_b.numel()}")
+        raise ValueError(
+            f"Tensor size mismatch: {activations_a.numel()} vs {activations_b.numel()}"
+        )
     X = activations_a.float()
     Y = activations_b.float()
 
@@ -369,8 +371,13 @@ def merge_compatibility_index(
 
     # Confidence weighted by metric importance
     metric_weights = {
-        "cosine": 0.25, "spectral": 0.15, "rank": 0.10,
-        "sign": 0.15, "tsv": 0.10, "energy": 0.10, "kl": 0.15,
+        "cosine": 0.25,
+        "spectral": 0.15,
+        "rank": 0.10,
+        "sign": 0.15,
+        "tsv": 0.10,
+        "energy": 0.10,
+        "kl": 0.15,
     }
     confidence = sum(metric_weights.get(m, 0.1) for m in components)
     confidence = min(confidence, 1.0)

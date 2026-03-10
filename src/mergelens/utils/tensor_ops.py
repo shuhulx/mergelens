@@ -67,7 +67,7 @@ def grassmann_distance(U1: torch.Tensor, U2: torch.Tensor) -> float:
     Returns value in [0, pi/2 * sqrt(k)], normalized to [0, 1].
     """
     if U1.shape[1] == 0 or U2.shape[1] == 0:
-        return float('nan')
+        return float("nan")
     # Compute cosines of principal angles
     M = U1.T @ U2
     sigmas = torch.linalg.svdvals(M)

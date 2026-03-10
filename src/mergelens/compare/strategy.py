@@ -116,7 +116,9 @@ def recommend_strategy(result: CompareResult) -> StrategyRecommendation:
     severity_factor = {"LOW": 0.9, "MEDIUM": 0.7, "HIGH": 0.5, "CRITICAL": 0.3}
     if conflicts:
         for zone in conflicts:
-            factor = severity_factor.get(zone.severity.value if hasattr(zone.severity, 'value') else str(zone.severity), 0.5)
+            factor = severity_factor.get(
+                zone.severity.value if hasattr(zone.severity, "value") else str(zone.severity), 0.5
+            )
             for layer_name in zone.layer_names:
                 per_layer_overrides[layer_name] = {"t": t * factor}
         warnings.append(f"Found {len(conflicts)} conflict zone(s). Per-layer overrides applied.")
