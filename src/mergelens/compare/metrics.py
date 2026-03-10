@@ -52,6 +52,8 @@ def cosine_similarity(a: torch.Tensor, b: torch.Tensor) -> float:
 
     Returns value in [-1, 1]. Higher = more similar.
     """
+    if a.numel() != b.numel():
+        raise ValueError(f"Tensor size mismatch: {a.numel()} vs {b.numel()}")
     a_flat = a.flatten().float()
     b_flat = b.flatten().float()
     norm_a = torch.norm(a_flat)
@@ -69,6 +71,8 @@ def l2_distance(a: torch.Tensor, b: torch.Tensor) -> float:
     Normalized by the average L2 norm to make comparable across layers.
     Returns value >= 0. Lower = more similar.
     """
+    if a.numel() != b.numel():
+        raise ValueError(f"Tensor size mismatch: {a.numel()} vs {b.numel()}")
     a_flat = a.flatten().float()
     b_flat = b.flatten().float()
     dist = torch.norm(a_flat - b_flat).item()
@@ -85,6 +89,8 @@ def kl_divergence(a: torch.Tensor, b: torch.Tensor) -> float:
     Treats weights as unnormalized distributions, applies softmax.
     Returns value >= 0. Lower = more similar.
     """
+    if a.numel() != b.numel():
+        raise ValueError(f"Tensor size mismatch: {a.numel()} vs {b.numel()}")
     a_flat = a.flatten().float()
     b_flat = b.flatten().float()
     # Use temperature scaling for numerical stability
@@ -109,6 +115,8 @@ def spectral_subspace_overlap(a: torch.Tensor, b: torch.Tensor, k: int = 64) -> 
 
     Based on: Zhou et al. 2026 "Demystifying Mergeability" (arXiv:2601.22285)
     """
+    if a.numel() != b.numel():
+        raise ValueError(f"Tensor size mismatch: {a.numel()} vs {b.numel()}")
     U_a, _, _ = truncated_svd(a, k=k)
     U_b, _, _ = truncated_svd(b, k=k)
     min_cols = min(U_a.shape[1], U_b.shape[1])
@@ -126,6 +134,8 @@ def effective_rank_ratio(a: torch.Tensor, b: torch.Tensor) -> float:
     Returns min(erank_a, erank_b) / max(erank_a, erank_b).
     Value in [0, 1]. Higher = more compatible dimensionality.
     """
+    if a.numel() != b.numel():
+        raise ValueError(f"Tensor size mismatch: {a.numel()} vs {b.numel()}")
     er_a = effective_rank(a)
     er_b = effective_rank(b)
     if max(er_a, er_b) < 1e-10:
@@ -153,12 +163,10 @@ def sign_disagreement_rate(
 
     for i in range(len(signs)):
         for j in range(i + 1, len(signs)):
-            # Count where signs differ and both are non-zero
-            mask = (signs[i] != 0) & (signs[j] != 0)
-            if mask.sum() > 0:
-                disagree = (signs[i][mask] != signs[j][mask]).float().mean().item()
-                total_disagreements += disagree
-                total_pairs += 1
+            # Count all sign mismatches, including zero vs non-zero
+            sign_mismatch = (signs[i] != signs[j]).float().mean().item()
+            total_disagreements += sign_mismatch
+            total_pairs += 1
 
     if total_pairs == 0:
         return 0.0
@@ -202,7 +210,9 @@ def tsv_interference_score(
             total_interference += interference
             n_pairs += 1
 
-    return total_interference / max(n_pairs, 1)
+    if n_pairs == 0:
+        return float('nan')
+    return total_interference / n_pairs
 
 
 @register_metric("centered_task_vector_energy")
@@ -241,6 +251,8 @@ def cka_similarity(
 
     Based on: Kornblith et al. 2019 "Similarity of Neural Network Representations Revisited"
     """
+    if activations_a.numel() != activations_b.numel():
+        raise ValueError(f"Tensor size mismatch: {activations_a.numel()} vs {activations_b.numel()}")
     X = activations_a.float()
     Y = activations_b.float()
 
@@ -355,10 +367,13 @@ def merge_compatibility_index(
     raw_score = sum(components[k] * weights[k] / total_weight for k in components)
     score = float(np.clip(raw_score * 100, 0, 100))
 
-    # Confidence based on how many metric types are available
-    n_available = len(components)
-    n_total = 7  # Total possible metric categories
-    confidence = float(n_available / n_total)
+    # Confidence weighted by metric importance
+    metric_weights = {
+        "cosine": 0.25, "spectral": 0.15, "rank": 0.10,
+        "sign": 0.15, "tsv": 0.10, "energy": 0.10, "kl": 0.15,
+    }
+    confidence = sum(metric_weights.get(m, 0.1) for m in components)
+    confidence = min(confidence, 1.0)
 
     # Confidence interval (wider with fewer metrics)
     margin = (1.0 - confidence) * 15 + 5  # 5-20 point margin

@@ -126,15 +126,15 @@ def create_server():
 
         Creates a self-contained HTML file with Plotly charts.
         """
-        import os
+        from pathlib import Path
 
         from mergelens.compare.analyzer import compare_models as _compare
         from mergelens.report.generator import generate_report as _report
 
         # Security: prevent path traversal from MCP clients
-        resolved = os.path.realpath(output_path)
-        cwd = os.path.realpath(os.getcwd())
-        if not resolved.startswith(cwd + os.sep) and resolved != cwd:
+        resolved = Path(output_path).resolve()
+        cwd = Path.cwd().resolve()
+        if not resolved.is_relative_to(cwd):
             raise ValueError(
                 f"output_path must be within the current working directory. Resolved to: {resolved}"
             )

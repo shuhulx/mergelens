@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html as html_mod
 import json
 from pathlib import Path
 
@@ -47,6 +48,8 @@ def generate_report(
         charts["heatmap"] = _build_similarity_heatmap(compare_result)
         charts["spectral"] = _build_spectral_chart(compare_result)
         charts["conflicts"] = _build_conflict_chart(compare_result)
+
+    title = html_mod.escape(title)
 
     html = template.render(
         title=title,

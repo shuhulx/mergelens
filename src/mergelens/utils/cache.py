@@ -13,15 +13,16 @@ try:
 except ImportError:
     HAS_DISKCACHE = False
 
+_CACHE_VERSION = "v2"
+
 
 def _tensor_hash(tensor) -> str:
     """Create a stable hash for a tensor based on shape and sample values."""
     import torch
 
     shape_str = str(tuple(tensor.shape))
-    # Sample a few values for speed
     flat = tensor.flatten()
-    n = min(100, len(flat))
+    n = min(1000, len(flat)) if len(flat) >= 1_000_000 else len(flat)
     indices = torch.linspace(0, len(flat) - 1, n).long()
     sample = flat[indices].float().cpu().numpy().tobytes()
     return hashlib.sha256(shape_str.encode() + sample).hexdigest()[:16]
@@ -51,7 +52,7 @@ class MetricCache:
 
     def make_key(self, metric_name: str, *tensors) -> str:
         """Create a cache key from metric name and tensor hashes."""
-        parts = [metric_name]
+        parts = [_CACHE_VERSION, metric_name]
         for t in tensors:
             parts.append(_tensor_hash(t))
         return ":".join(parts)

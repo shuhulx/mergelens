@@ -55,6 +55,9 @@ def parse_mergekit_config(yaml_content: str) -> MergeConfig:
 
     slices = raw.get("slices")
 
+    if not models:
+        raise ValueError("MergeKit config must contain at least one model in 'models' or 'slices'")
+
     return MergeConfig(
         merge_method=method,
         base_model=base_model,

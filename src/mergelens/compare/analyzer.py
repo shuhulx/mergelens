@@ -181,7 +181,7 @@ def compare_models(
 
 def _detect_conflict_zones(
     layer_metrics: list[LayerMetrics],
-    cos_threshold: float = 0.85,
+    cos_threshold: float = 0.80,
     min_zone_size: int = 2,
 ) -> list[ConflictZone]:
     """Detect contiguous groups of layers with high disagreement."""

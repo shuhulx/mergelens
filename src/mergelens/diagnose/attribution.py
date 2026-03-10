@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 from mergelens.compare.loader import ModelHandle, find_common_tensors
 from mergelens.compare.metrics import cosine_similarity
+
+logger = logging.getLogger(__name__)
 
 
 def compute_attribution(
@@ -34,6 +38,11 @@ def compute_attribution(
         if total > 0:
             contributions = {k: round(max(0.0, v) / total, 4) for k, v in similarities.items()}
         else:
+            logger.warning(
+                "All source contributions are negative for layer '%s'; "
+                "falling back to uniform distribution.",
+                name,
+            )
             contributions = {k: round(1.0 / len(similarities), 4) for k in similarities}
 
         attribution[name] = contributions

@@ -62,13 +62,16 @@ def _get_local_metadata(local_path: str) -> ModelMetadata:
     # Try to read config.json
     config_path = path / "config.json"
     if config_path.exists():
-        with open(config_path) as f:
-            meta.config = json.load(f)
-        meta.architecture = (
-            meta.config.get("model_type") or meta.config.get("architectures", [None])[0]
-        )
-        # Estimate parameters from config
-        meta.num_parameters = _estimate_params_from_config(meta.config)
+        try:
+            with open(config_path) as f:
+                meta.config = json.load(f)
+            meta.architecture = (
+                meta.config.get("model_type") or meta.config.get("architectures", [None])[0]
+            )
+            # Estimate parameters from config
+            meta.num_parameters = _estimate_params_from_config(meta.config)
+        except (json.JSONDecodeError, IOError):
+            pass  # Config file is optional/malformed
 
     return meta
 
@@ -109,7 +112,7 @@ def _get_hub_metadata(repo_id: str) -> ModelMetadata:
         )
         if meta.num_parameters is None:
             meta.num_parameters = _estimate_params_from_config(meta.config)
-    except (EntryNotFoundError, RepositoryNotFoundError):
+    except (EntryNotFoundError, RepositoryNotFoundError, json.JSONDecodeError, IOError):
         pass
 
     return meta

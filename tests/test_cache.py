@@ -38,4 +38,4 @@ def test_make_key():
     t1 = torch.randn(16, 16)
     t2 = torch.randn(16, 16)
     key = cache.make_key("cosine", t1, t2)
-    assert key.startswith("cosine:")
+    assert key.startswith("v2:cosine:")

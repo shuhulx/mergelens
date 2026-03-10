@@ -112,16 +112,21 @@ def recommend_strategy(result: CompareResult) -> StrategyRecommendation:
     # Default: SLERP (good general-purpose method)
     t = min(0.5, max(0.3, 1.0 - avg_cos))  # Lower t when models are more similar
 
-    # Add per-layer overrides for conflict zones
+    # Add per-layer overrides for conflict zones, scaled by severity
+    severity_factor = {"LOW": 0.9, "MEDIUM": 0.7, "HIGH": 0.5, "CRITICAL": 0.3}
     if conflicts:
         for zone in conflicts:
+            factor = severity_factor.get(zone.severity.value if hasattr(zone.severity, 'value') else str(zone.severity), 0.5)
             for layer_name in zone.layer_names:
-                per_layer_overrides[layer_name] = {"t": t * 0.5}
+                per_layer_overrides[layer_name] = {"t": t * factor}
         warnings.append(f"Found {len(conflicts)} conflict zone(s). Per-layer overrides applied.")
+
+    base_conf = 0.85 if avg_cos > 0.9 else 0.7
+    slerp_confidence = round(base_conf * min(mci.score / 75.0, 1.0), 2)
 
     return StrategyRecommendation(
         method=MergeMethod.SLERP,
-        confidence=0.85 if avg_cos > 0.9 else 0.7,
+        confidence=slerp_confidence,
         reasoning=(
             f"Models are generally compatible (cosine sim {avg_cos:.3f}, "
             f"spectral overlap {avg_spectral:.2f}). "
